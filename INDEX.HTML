@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wings Agile System — Demo Avanzada</title>
+<!--
+  Wings Agile System — Presentación y demo interactiva (completa)
+  Autores: Luis Campoblanco & Isabel Espinoza
+  Instrucciones:
+    1. Guardar como index.html y abrir en un navegador moderno.
+    2. Las imágenes usan fuentes públicas (Unsplash). Puedes reemplazarlas por tus imágenes.
+    3. Para conectar con backend real:
+       - Cambia `USE_REAL_WS = true` y actualiza WS_URL_BASE a la ruta del servidor WebSocket.
+       - Backend debe aceptar JSON con estructura similar a los scripts Python que mostraste.
+-->
+<style>
+  :root{
+    --bg:#07121a; --card:#0f1a24; --accent:#e07a1f; --muted:#9fb0c6;
+    --success:#16a34a; --danger:#ef4444; --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#041017 0,#07121a 100%);color:#e6eef6;-webkit-font-smoothing:antialiased;}
+  .page{max-width:1200px;margin:28px auto;padding:20px}
+  header{display:flex;align-items:center;gap:16px}
+  header img.logo{width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid rgba(255,255,255,0.03)}
+  h1{margin:0;font-size:22px}
+  .authors{color:var(--muted);font-size:13px}
+  .layout{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-top:18px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid var(--glass-2);padding:14px;border-radius:var(--radius)}
+  .section-title{display:flex;justify-content:space-between;align-items:center}
+  .muted{color:var(--muted);font-size:13px}
+  /* left column */
+  .left .hero-img{width:100%;height:180px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,0.02)}
+  .meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .pill{background:var(--glass);padding:6px 8px;border-radius:999px;color:var(--muted);font-size:13px}
+  .sprints-list{margin-top:10px}
+  .sprint{padding:8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.02);margin-bottom:8px}
+  .sprint h4{margin:0 0 6px 0}
+  .small{font-size:13px;color:var(--muted)}
+  /* right column - interactive */
+  .demo-grid{display:grid;grid-template-columns:1fr 420px;gap:12px}
+  .menu{max-height:280px;overflow:auto;border-radius:8px;padding:6px}
+  .menu-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.01)}
+  .menu-item .info{max-width:66%}
+  .menu-item strong{display:block}
+  input.qty{width:64px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .btn{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#081018;font-weight:700;cursor:pointer}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
+  .cart{max-height:230px;overflow:auto;padding:6px;border-radius:8px}
+  .cart-item{display:flex;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(0,0,0,0.12);margin-bottom:6px}
+  .status{padding:10px;border-radius:8px;margin-top:8px}
+  .status.info{background:rgba(59,130,246,0.06);color:#7cc0ff}
+  .status.warn{background:rgba(250,204,21,0.06);color:#ffd976}
+  .status.success{background:rgba(16,185,129,0.06);color:#8ff3c8}
+  .status.error{background:rgba(239,68,68,0.06);color:#ffb4b4}
+  .log{font-family:monospace;font-size:13px;max-height:150px;overflow:auto;padding:8px;background:#06101a;border-radius:8px;margin-top:8px}
+  .diagram{display:flex;justify-content:center;padding:8px}
+  .diagram svg{max-width:100%;height:auto}
+  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  /* responsive */
+  @media(max-width:1080px){ .layout{grid-template-columns:1fr} .demo-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <img class="logo" src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=600&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b8e7a2bde4f1cdd8d6b0d9a3c5e7ef8" alt="Logo alitas">
+    <div>
+      <h1>Wings Agile System</h1>
+      <div class="authors">Autores: <strong>Luis Campoblanco</strong> · <strong>Isabel Espinoza</strong></div>
+      <div class="muted">Demo interactiva y presentación del flujo Cliente ↔ Cocina ↔ Admin</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT: overview, sprints, diagram -->
+    <div class="left">
+      <div class="card">
+        <img class="hero-img" src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=7c64c9b3a8d0f6c3b6e9b7e0f9d1c2e1" alt="Alitas">
+        <div class="meta-row">
+          <div class="pill">PWA</div>
+          <div class="pill">WebSockets</div>
+          <div class="pill">MongoDB</div>
+          <div class="pill">Pagos (Stripe, Culqi)</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="section-title"><h3 style="margin:0">Resumen breve</h3><div class="muted">MVP & Demo</div></div>
+          <p class="small">Plataforma web responsiva para gestionar pedidos, promociones y paneles en tiempo real para cocina y administración, diseñada para restaurantes pequeños y medianos (foco: alitas).</p>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:8px">Arquitectura</h3>
+          <div class="diagram">
+            <!-- Simple SVG diagram -->
+            <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama arquitectura">
+              <defs>
+                <linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#0ea5a9"/><stop offset="1" stop-color="#e07a1f"/></linearGradient>
+              </defs>
+              <rect x="10" y="20" width="160" height="60" rx="10" fill="#071827" stroke="rgba(255,255,255,0.04)"/>
+              <text x="90" y="50" fill="#9fb0c6" font-size="12" text-anchor="middle">Frontend (PWA)</text>
+
+              <rect x="270" y="20" width="160" height="60" rx="10" fill="#071827" stroke="rgba(255,255,255,0.04)"/>
+              <text x="350" y="40" fill="#9fb0c6" font-size="12" text-anchor="middle">Backend API + WebSockets</text>
+
+              <rect x="520" y="20" width="160" height="60" rx="10" fill="#071827" stroke="rgba(255,255,255,0.04)"/>
+              <text x="600" y="40" fill="#9fb0c6" font-size="12" text-anchor="middle">DB: MongoDB Atlas</text>
+
+              <line x1="170" y1="50" x2="270" y2="50" stroke="url(#g)" stroke-width="2" />
+              <text x="220" y="40" fill="#7fb3c6" font-size="11" text-anchor="middle">REST / JSON</text>
+
+              <line x1="430" y1="50" x2="520" y2="50" stroke="url(#g)" stroke-width="2" />
+              <text x="475" y="40" fill="#7fb3c6" font-size="11" text-anchor="middle">Persistencia</text>
+
+              <line x1="350" y1="80" x2="350" y2="120" stroke="rgba(255,255,255,0.03)" />
+              <rect x="300" y="120" width="100" height="24" rx="6" fill="#041823" stroke="rgba(255,255,255,0.02)"/>
+              <text x="350" y="137" fill="#9fb0c6" font-size="11" text-anchor="middle">Panel Cocina (WS)</text>
+            </svg>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:8px">Sprints (resumen)</h3>
+          <div class="sprints-list">
+            <!-- concise sprint descriptions -->
+            <div class="sprint"><h4>Sprint 0 — Preparación</h4><div class="small">Repos, CI/CD, prototipo Figma y backlog inicial.</div></div>
+            <div class="sprint"><h4>Sprint 1 — Autenticación</h4><div class="small">Registro/login, JWT, roles (cliente/empleado/admin).</div></div>
+            <div class="sprint"><h4>Sprint 2 — Catálogo</h4><div class="small">CRUD de productos, variantes y carrito persistente.</div></div>
+            <div class="sprint"><h4>Sprint 3 — Pedidos & Cocina</h4><div class="small">WebSockets, panel cocina en tiempo real y timeline por pedido.</div></div>
+            <div class="sprint"><h4>Sprint 4 — Pagos</h4><div class="small">Checkout, pasarelas (Stripe/Culqi), webhooks y comprobantes.</div></div>
+            <div class="sprint"><h4>Sprint 5 — Admin & Promos</h4><div class="small">Dashboard, promociones, logs y reportes.</div></div>
+            <div class="sprint"><h4>Sprint 6 — Seguridad</h4><div class="small">HTTPS, backups, logging y SAST.</div></div>
+            <div class="sprint"><h4>Sprint 7 — QA</h4><div class="small">E2E tests, accesibilidad y UX.</div></div>
+            <div class="sprint"><h4>Sprint 8 — Despliegue</h4><div class="small">Release, docs y capacitación.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: interactive demo and explanations -->
+    <div>
+      <div class="card">
+        <div class="section-title">
+          <h2 style="margin:0">Demo interactiva avanzada</h2>
+          <div class="muted">Simulación en página — útil para presentación</div>
+        </div>
+
+        <div style="margin-top:10px" class="demo-grid">
+          <!-- left: customer menu + cart -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Interfaz Cliente</strong><div class="muted">Añadir, ver y enviar pedido</div></div>
+              <div class="muted">ID: <span id="clienteId" style="font-weight:700">--</span></div>
+            </div>
+
+            <div style="margin-top:8px" class="menu card" id="menuList">
+              <!-- menu items rendered via JS -->
+            </div>
+
+            <div style="margin-top:8px">
+              <div class="small">Carrito</div>
+              <div class="cart card" id="cartBox">Carrito vacío</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn" id="btnSendOrder">Enviar pedido</button>
+                <button class="btn secondary" id="btnClearCart">Vaciar</button>
+                <button class="btn secondary" id="btnToggleReal">Usar WS real: <span id="useReal">NO</span></button>
+              </div>
+              <div style="margin-top:8px" class="muted">Subtotal: S/ <span id="subtotal">0.00</span></div>
+              <div id="clientStatus" class="status info" style="margin-top:8px">Estado: esperando acción</div>
+            </div>
+          </div>
+
+          <!-- right: kitchen panel + history -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Panel Cocina</strong><div class="muted">Recibe pedidos y actualiza estados</div></div>
+              <div class="muted">Cola: <span id="queueCount">0</span></div>
+            </div>
+
+            <div style="margin-top:8px" id="kitchenQueue" class="card">
+              <div class="muted">No hay pedidos</div>
+            </div>
+
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button class="btn" id="btnProcessNext">Procesar siguiente</button>
+              <button class="btn secondary" id="btnMarkReady">Marcar listo</button>
+              <button class="btn secondary" id="btnSimError">Simular error</button>
+            </div>
+
+            <div style="margin-top:12px">
+              <div class="small">Historial de eventos</div>
+              <div id="eventLog" class="log"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- detailed explanation area -->
+        <div style="margin-top:12px">
+          <h3>Cómo funciona (explicación técnica visible)</h3>
+          <ol class="muted">
+            <li><strong>Cliente:</strong> Añade productos al carrito y envía pedido. En una implementación real, el frontend enviaría un JSON al servidor via WebSocket.</li>
+            <li><strong>Backend:</strong> Recepciona el pedido, lo persiste en la base de datos y notifica al panel de cocina (WebSocket rooms o topics por local).</li>
+            <li><strong>Cocina:</strong> Actualiza el estado (en preparación → listo). Cada cambio se envía por WebSocket al cliente y al admin.</li>
+            <li><strong>Admin:</strong> Visualiza métricas y puede crear promociones que se aplican al checkout.</li>
+          </ol>
+
+          <div class="muted">Conexión real: en producción usa <code>wss://</code> con autenticación de tokens. Para demo local, el archivo puede simular todo sin servidor.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Notas para integrar con tu backend Python</h3>
+        <div class="muted">
+          <ul>
+            <li>La estructura JSON enviada desde el cliente debe ser similar a:
+              <pre style="background:#071822;padding:8px;border-radius:6px;color:#9fb0c6">{
+  "cliente":"Luis",
+  "cliente_id":"uuid",
+  "items":[{"codigo":"BBQ","producto":"Alitas BBQ","cantidad":2,"precio":18.0}]
+}</pre>
+            </li>
+            <li>El servidor WebSocket debe enviar mensajes con la clave <code>estado</code> (valores: <code>recibido</code>, <code>en preparación</code>, <code>listo</code>, <code>error</code>).</li>
+            <li>Para desplegar: <strong>Frontend</strong> en Vercel (estático). <strong>Backend</strong> en Render / Railway / Fly (soporte WebSockets persistentes).</li>
+            <li>Si deseas, puedo generar el backend en Python (asyncio + websockets) listo para Render con un script de ejemplo.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="muted">Referencias: Prototipo Figma · Stripe · Culqi / Niubiz · MongoDB Atlas · OWASP · Documentación de PWA. Demo creada para presentar el flujo del MVP.</footer>
+</div>
+
+<script>
+/*
+  Demo Avanzada - JS
+  Aspectos importantes:
+   - Esta página simula el "message bus" (pedido -> cocina -> cliente) en memoria.
+   - Para usar WebSocket real:
+       * set USE_REAL_WS = true
+       * definir WS_URL_BASE (ej: wss://mi-backend.com/ws/cliente/)
+       * backend debe aceptar y enviar JSON con campos mencionados en la UI
+*/
+const USE_REAL_WS = false; // cambiar a true para conectar a WS real
+const WS_URL_BASE = 'ws://127.0.0.1:8000/ws/cliente/'; // ajustar según tu servidor
+
+// Datos del menú (idénticos a tus scripts Python)
+const CARTA = {
+  "BBQ": { nombre: "Alitas BBQ", precio: 18.0, img: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b8e7a2bde4f1cdd8d6b0d9a3c5e7ef8" },
+  "PIC": { nombre: "Alitas Picantes", precio: 18.0, img: "https://images.unsplash.com/photo-1604908177522-3b2b4c5d6a3c?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=ad3ebb5e5d5a1b1e4a6b3c2d1e8f9a0b" },
+  "MIE": { nombre: "Alitas Miel Mostaza", precio: 19.0, img: "https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=12a4a8c9b7d3f4e5a6c2b3d1e9f0b1c2" },
+  "AJO": { nombre: "Alitas Ajo Parmesano", precio: 19.0, img: "https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=12a4a8c9b7d3f4e5a6c2b3d1e9f0b1c2" },
+  "FRI": { nombre: "Papas Fritas", precio: 10.0, img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=15f77b3f1a2c4b5d6e7f8a9b0c1d2e3f" },
+  "QUES":{ nombre: "Papas con Queso", precio: 10.0, img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=be1234567890abcdef1234567890abcd" },
+  "TE": { nombre: "Té Helado", precio: 8.0, img: "https://images.unsplash.com/photo-1566843972129-6f4c1b7e24c8?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=8abcde12345f67890abcde12345f6789" },
+  "GAS":{ nombre: "Gaseosa 500ml", precio: 8.0, img: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=7c64c9b3a8d0f6c3b6e9b7e0f9d1c2e1" },
+  "C1": { nombre: "Combo 1 (BBQ + Papas + Gaseosa)", precio: 30.0, img: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b8e7a2bde4f1cdd8d6b0d9a3c5e7ef8" },
+  "C2": { nombre: "Combo 2 (Picantes + Queso + Té)", precio: 30.0, img: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=7c64c9b3a8d0f6c3b6e9b7e0f9d1c2e1" }
+};
+
+// Estado local
+let clienteId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'cli-' + Date.now();
+document.getElementById('clienteId').textContent = clienteId;
+
+let cart = [];
+let kitchenQueue = [];
+let eventLog = [];
+let ws = null;
+
+// UI refs
+const menuListEl = document.getElementById('menuList');
+const cartBox = document.getElementById('cartBox');
+const subtotalEl = document.getElementById('subtotal');
+const clientStatus = document.getElementById('clientStatus');
+const kitchenQueueEl = document.getElementById('kitchenQueue');
+const eventLogEl = document.getElementById('eventLog');
+const queueCountEl = document.getElementById('queueCount');
+const useRealText = document.getElementById('useReal');
+
+// Render menu with images and details
+function renderMenu(){
+  menuListEl.innerHTML = '';
+  for (const code of Object.keys(CARTA)){
+    const it = CARTA[code];
+    const div = document.createElement('div');
+    div.className = 'menu-item';
+    div.innerHTML = `
+      <div class="info">
+        <strong>${it.nombre}</strong>
+        <div class="muted">${code} · S/ ${it.precio.toFixed(2)}</div>
+        <div style="margin-top:6px"><img src="${it.img}" alt="${it.nombre}" style="width:100%;max-width:260px;border-radius:8px;margin-top:6px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <input class="qty" type="number" min="1" value="1" id="qty-${code}" aria-label="cantidad-${code}">
+        <button class="btn" data-code="${code}">Agregar</button>
+      </div>
+    `;
+    menuListEl.appendChild(div);
+  }
+  // attach listeners
+  menuListEl.querySelectorAll('button.btn').forEach(b=>{
+    b.addEventListener('click', ev=>{
+      const code = ev.currentTarget.dataset.code;
+      const qty = parseInt(document.getElementById('qty-'+code).value || '1');
+      addToCart(code, Math.max(1, qty));
+    });
+  });
+}
+
+// Cart rendering
+function renderCart(){
+  if (cart.length === 0){ cartBox.innerHTML = '<div class="muted">Carrito vacío</div>'; subtotalEl.textContent = '0.00'; return; }
+  cartBox.innerHTML = '';
+  cart.forEach((it, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    row.innerHTML = `
+      <div>
+        <strong>${it.producto}</strong>
+        <div class="muted">${it.cantidad} x S/ ${it.precio.toFixed(2)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div><strong>S/ ${(it.cantidad*it.precio).toFixed(2)}</strong></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn secondary" data-idx="${idx}" data-op="dec">-</button>
+          <button class="btn secondary" data-idx="${idx}" data-op="inc">+</button>
+          <button class="btn secondary" data-idx="${idx}" data-op="rm">x</button>
+        </div>
+      </div>`;
+    cartBox.appendChild(row);
+  });
+  // attach cart buttons
+  cartBox.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ev=>{
+      const idx = parseInt(ev.currentTarget.dataset.idx);
+      const op = ev.currentTarget.dataset.op;
+      if (op === 'dec'){ cart[idx].cantidad -= 1; if (cart[idx].cantidad <= 0) cart.splice(idx,1); }
+      else if (op === 'inc'){ cart[idx].cantidad += 1; }
+      else if (op === 'rm'){ cart.splice(idx,1); }
+      renderCart();
+    });
+  });
+  const total = cart.reduce((s,i)=> s + (i.precio * i.cantidad), 0);
+  subtotalEl.textContent = total.toFixed(2);
+}
+
+// Add to cart
+function addToCart(code, cantidad){
+  const prod = CARTA[code];
+  const e = cart.find(i=>i.codigo===code);
+  if (e) e.cantidad += cantidad; else cart.push({codigo:code, producto:prod.nombre, cantidad:cantidad, precio:prod.precio});
+  log(`Cliente añadió ${cantidad} x ${prod.nombre}`);
+  renderCart();
+}
+
+// Clear cart
+document.getElementById('btnClearCart').addEventListener('click', ()=>{
+  cart = []; renderCart(); log('Carrito vaciado');
+});
+
+// Send order (to local simulated queue or to WS)
+document.getElementById('btnSendOrder').addEventListener('click', ()=>{
+  if (cart.length === 0){ alert('El carrito está vacío'); return; }
+  const pedido = {
+    pedido_id: 'p-' + Date.now(),
+    cliente: 'Cliente Demo',
+    cliente_id: clienteId,
+    items: cart.map(i=>({codigo:i.codigo, producto:i.producto, cantidad:i.cantidad, precio:i.precio})),
+    estado: 'recibido',
+    ts: new Date().toISOString()
+  };
+  if (USE_REAL_WS){
+    // send via WebSocket to backend
+    if (!ws || ws.readyState !== WebSocket.OPEN){
+      connectWS(()=> ws.send(JSON.stringify(pedido)));
+      setClientStatus('Conectando a servidor...','warn');
+      // send will happen in callback
+    } else {
+      ws.send(JSON.stringify(pedido));
+      setClientStatus('Pedido enviado (via WS). Esperando respuesta...','info');
+      log('Pedido enviado via WS: ' + pedido.pedido_id);
+    }
+  } else {
+    // Simulated: push to in-memory kitchen queue and notify UI
+    kitchenQueue.push(pedido);
+    cart = []; renderCart();
+    updateKitchenUI();
+    setClientStatus('Pedido enviado. Esperando confirmación de cocina...', 'info');
+    log('Pedido encolado (simulado): ' + pedido.pedido_id);
+  }
+});
+
+// Kitchen controls
+function updateKitchenUI(){
+  queueCountEl.textContent = kitchenQueue.length;
+  kitchenQueueEl.innerHTML = '';
+  if (kitchenQueue.length === 0){ kitchenQueueEl.innerHTML = '<div class="muted">No hay pedidos</div>'; return; }
+  kitchenQueue.forEach((p, idx)=>{
+    const el = document.createElement('div');
+    el.style.padding = '8px';
+    el.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    el.innerHTML = `
+      <div><strong>${p.pedido_id}</strong> <span class="muted">— ${p.cliente}</span></div>
+      <div class="muted">Estado: ${p.estado} · Items: ${p.items.length}</div>
+      <div style="margin-top:6px;display:flex;gap:6px">
+        <button class="btn" data-idx="${idx}" data-action="prep">Iniciar preparación</button>
+        <button class="btn secondary" data-idx="${idx}" data-action="ready">Marcar listo</button>
+        <button class="btn secondary" data-idx="${idx}" data-action="err">Simular error</button>
+      </div>
+    `;
+    kitchenQueueEl.appendChild(el);
+  });
+  // attach listeners
+  kitchenQueueEl.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ev=>{
+      const idx = parseInt(ev.currentTarget.dataset.idx);
+      const action = ev.currentTarget.dataset.action;
+      const pedido = kitchenQueue[idx];
+      if (!pedido) return;
+      if (action === 'prep'){
+        pedido.estado = 'en preparación';
+        notifyClient(pedido, 'en preparación');
+        log(`Cocina: ${pedido.pedido_id} -> en preparación`);
+        setClientStatus('Cocina está preparando tu pedido...', 'warn');
+      } else if (action === 'ready'){
+        pedido.estado = 'listo';
+        notifyClient(pedido, 'listo');
+        log(`Cocina: ${pedido.pedido_id} -> listo`);
+        setClientStatus('✅ Tu pedido está listo para recoger', 'success');
+        // remove from queue
+        kitchenQueue.splice(idx,1);
+      } else if (action === 'err'){
+        pedido.estado = 'error';
+        notifyClient(pedido, 'error', 'Fallo en preparación');
+        log(`Cocina: ${pedido.pedido_id} -> error`);
+        kitchenQueue.splice(idx,1);
+      }
+      updateKitchenUI();
+    });
+  });
+}
+
+// Simulate processing next (button)
+document.getElementById('btnProcessNext').addEventListener('click', ()=>{
+  if (kitchenQueue.length === 0){ alert('No hay pedidos'); return; }
+  const p = kitchenQueue[0];
+  p.estado = 'en preparación';
+  notifyClient(p, 'en preparación');
+  log(`Cocina: procesando ${p.pedido_id}`);
+  setClientStatus('Cocina está preparando tu pedido...', 'warn');
+  updateKitchenUI();
+});
+
+// Mark ready (for first in queue)
+document.getElementById('btnMarkReady').addEventListener('click', ()=>{
+  if (kitchenQueue.length === 0){ alert('No hay pedidos'); return; }
+  const p = kitchenQueue[0];
+  p.estado = 'listo';
+  notifyClient(p, 'listo');
+  log(`Cocina: ${p.pedido_id} listo`);
+  setClientStatus('✅ Tu pedido está listo para recoger', 'success');
+  kitchenQueue.shift();
+  updateKitchenUI();
+});
+
+// Simulate error button
+document.getElementById('btnSimError').addEventListener('click', ()=>{
+  if (kitchenQueue.length === 0){ alert('No hay pedidos'); return; }
+  const p = kitchenQueue[0];
+  p.estado = 'error';
+  notifyClient(p, 'error', 'Problema con ingredientes');
+  log(`Cocina: ${p.pedido_id} error simulado`);
+  kitchenQueue.shift();
+  updateKitchenUI();
+});
+
+// Toggle use real WS
+document.getElementById('btnToggleReal').addEventListener('click', ()=>{
+  if (USE_REAL_WS){
+    alert('La demo está actualmente configurada para usar WS real en tiempo de construcción. Cambia la constante en el código fuente si deseas alternar.');
+    return;
+  } else {
+    alert('Esta demo se ejecuta en modo simulado por defecto. Para usar WebSocket real: editar la constante USE_REAL_WS en el código y recargar la página.');
+  }
+});
+
+// Notify client (in real setup, server would send this via WS)
+function notifyClient(pedido, estado, msg){
+  // In the real implementation, backend sends this message via WebSocket to the client ID.
+  // Here we update UI directly to simulate that behavior.
+  const data = Object.assign({}, pedido, {estado: estado, msg: msg || ''});
+  handleServerMessage(data);
+}
+
+// Handle messages "from server" (simulated or real)
+function handleServerMessage(data){
+  const estado = data.estado;
+  if (estado === 'en preparación'){
+    setClientStatus('👨‍🍳 Cocina está preparando tu pedido...', 'warn');
+  } else if (estado === 'listo'){
+    setClientStatus('✅ Tu pedido está listo para recoger', 'success');
+  } else if (estado === 'error'){
+    setClientStatus('❌ Error en su pedido: ' + (data.msg || 'Error desconocido'), 'error');
+  } else {
+    setClientStatus('Estado: ' + estado, 'info');
+  }
+  log(`Mensaje recibido (simulado): ${JSON.stringify(data)}`);
+  // Append to event log
+  eventLog.unshift({ts: new Date().toISOString(), txt: `Servidor -> ${data.pedido_id || '-'} : ${estado}`});
+  refreshEventLog();
+}
+
+// Logging helpers
+function log(txt){ eventLog.unshift({ts: new Date().toISOString(), txt}); refreshEventLog(); }
+function refreshEventLog(){
+  eventLogEl.innerHTML = eventLog.map(e=>`<div>[${new Date(e.ts).toLocaleTimeString()}] ${escapeHtml(e.txt)}</div>`).join('');
+}
+
+// Client status helper
+function setClientStatus(text, type='info'){
+  const el = clientStatus;
+  el.textContent = 'Estado: ' + text;
+  el.className = 'status ' + (type === 'info' ? 'info' : type === 'warn' ? 'warn' : type === 'success' ? 'success' : 'error');
+}
+
+// Simple escape
+function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+// WebSocket real connection (optional)
+function connectWS(callback){
+  try {
+    ws = new WebSocket(WS_URL_BASE + clienteId);
+    ws.addEventListener('open', ()=> {
+      log('WS: conectado a ' + WS_URL_BASE + clienteId);
+      useRealText.textContent = 'YES';
+      if (callback) callback();
+    });
+    ws.addEventListener('message', ev=> {
+      try {
+        const data = JSON.parse(ev.data);
+        handleServerMessage(data);
+      } catch(e) {
+        log('WS: mensaje no JSON: ' + ev.data);
+      }
+    });
+    ws.addEventListener('close', ()=> { log('WS: desconectado'); useRealText.textContent = 'NO'; });
+    ws.addEventListener('error', err=> { log('WS: error'); useRealText.textContent = 'NO'; console.error(err); });
+  } catch(e){
+    log('WS: no es posible conectar: ' + e.message);
+  }
+}
+
+// init UI
+renderMenu();
+renderCart();
+updateKitchenUI();
+log('Demo iniciada (modo simulado)');
+</script>
+</body>
+</html>
